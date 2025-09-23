@@ -3,19 +3,17 @@ import os
 from typing import Literal, Optional
 from dataclasses import dataclass, field
 
+from Research.CodeGenerator.Utilities.TextGenerator import TextGenerator
 from Research.CodeGenerator.Utilities.FileTextWriter import FileTextWriter
 from Research.CodeGenerator.Utilities.FileHashEncoder import FileHashEncoder
-from Research.CodeGenerator.Utilities.TextGenerator import TextGenerator
 
-os.environ["OPENAI_API_KEY"] = (
-    "sk-proj-PIG_dmZ29vKYDgajDCHa82wGi96qf4uI9fGCsUtJl_UesSi7Zk_4_dcBI1UgecRfHdktEhbncP"
-    "T3BlbkFJAZX7R2DLt9ZJQTV82kmNb05-tqUxjiy6VmEijl6-JtqF1MGNz24ybkvjZP8aXkJKABzOqUBmoA"
-)
+os.environ["OPENAI_API_KEY"] = ("your_API_key")
 
 Mode = Literal["append", "replace"]
 
-@dataclass(slots=True)
+@dataclass(slots = True)
 class CodeAIService:
+
     """
     High-level service that composes hashing, generation, and writing utilities.
 
@@ -23,11 +21,12 @@ class CodeAIService:
     :param writer: File writer utility.
     :param hasher: File hashing utility.
     """
+
     pipeline: TextGenerator = field(default_factory=TextGenerator)
     writer: FileTextWriter = field(default_factory=FileTextWriter)
     hasher: FileHashEncoder = field(default_factory=FileHashEncoder)
 
-    def modify_file_with_random_text(
+    def randomize_file(
         self,
         file_path: str,
         mode: Mode = "append",
@@ -48,7 +47,7 @@ class CodeAIService:
         :raises OSError: If directories cannot be created or file cannot be written.
         """
         generated = self.pipeline.generate(
-            length_chars=length_chars,
+            char_length=length_chars,
             model=model,
             temperature=temperature,
         )
@@ -56,7 +55,7 @@ class CodeAIService:
         self.writer.write(file_path=file_path, mode=mode, text=sanitized)
         return sanitized
 
-    def sha256_of_file(self, file_path: str, chunk_size: Optional[int] = None) -> str:
+    def encode_file(self, file_path: str, chunk_size: Optional[int] = None) -> str:
         """
         Compute the SHA-256 hex digest of a file.
 
@@ -69,12 +68,10 @@ class CodeAIService:
         """
         return self.hasher.sha256_of_file(file_path=file_path, chunk_size=chunk_size)
 
-
-# ============================== Example run ==============================
-
 if __name__ == "__main__":
 
     service = CodeAIService()
 
-    written_text = service.modify_file_with_random_text("Data/example.txt", mode="replace")
-    print(service.sha256_of_file("Data/example.txt"))
+    written_text = service.randomize_file("Data/example.txt", mode="replace")
+    encoded_text = service.encode_file("Data/example.txt")
+    print(encoded_text if encoded_text else None)
