@@ -1,43 +1,48 @@
 import os
 import openai
 
-from dataclasses import dataclass
 from typing import Optional
+from dataclasses import dataclass
 
-@dataclass(slots=True)
+@dataclass(slots = True)
 class RemoteTextGenerator:
-    """
-    Remote text generator using OpenAI Chat Completions.
 
-    :param model: Default model name.
-    :param temperature: Default sampling temperature.
-    :param default_length: Default target character length.
     """
-    model: str = "gpt-4o-mini"
-    temperature: float = 0.9
-    default_length: int = 256
+    A remote random text generator that
+    uses the help of OpenAI, to create
+    random text.
+
+    :param model: The default model name.
+    :param temperature: The default sampling temperature.
+    :param default_length: The default target character length.
+    """
+
+    model = "gpt-4o-mini"
+    temperature = 0.8
+    default_length = 256
 
     def generate(
         self,
-        length_chars: Optional[int] = None,
+        char_length: Optional[int] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
     ) -> Optional[str]:
-        """
-        Try generating creative text via OpenAI. Returns None on error or missing key.
 
-        :param length_chars: Approximate target length in characters.
-        :param model: Optional model override.
-        :param temperature: Optional temperature override.
-        :return: Text trimmed to requested length, or None on failure.
         """
-        requested = max(16, int(length_chars or self.default_length))
-        chosen_model = model or self.model
-        chosen_temp = float(self.temperature if temperature is None else temperature)
+        Generates - if possible - a creative text via OpenAI.
 
-        api_key: Optional[str] = os.getenv("OPENAI_API_KEY") or getattr(openai, "api_key", None)
-        if not api_key:
-            return None
+        :param char_length: The approximate target length in characters.
+        :param model: The optional gpt model to override the default.
+        :param temperature: The optional temperature to override the default.
+        :return: The processed generated text from the API.
+        """
+
+        requested = max(16, int(char_length or self.default_length))
+        gpt_model = model or self.model
+        chosen_temp = self.temperature if temperature is None else temperature
+
+        api_key = os.getenv("OPENAI_API_KEY") or getattr(openai, "api_key", None)
+        if not api_key: return None
 
         max_tokens = max(16, int(requested / 3.5) + 20)
         system_prompt = (
@@ -47,39 +52,20 @@ class RemoteTextGenerator:
         )
         user_prompt = f"Please write a random text of about {requested} characters."
 
-        # Primary: modern client (openai>=1.x)
         try:
-            client = openai.OpenAI(api_key=api_key)  # type: ignore[attr-defined]
+
+            client = openai.OpenAI(api_key = api_key)
             resp = client.chat.completions.create(
-                model=chosen_model,
-                messages=[
+                model = gpt_model,
+                messages = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=max_tokens,
-                temperature=chosen_temp,
-                n=1,
+                max_tokens = max_tokens,
+                temperature = chosen_temp,
+                n = 1,
             )
             content = (resp.choices[0].message.content or "").strip()
-        except Exception:
-            content = None
+        except Exception: content = None
 
-        if content:
-            return content[:requested]
-
-        # Fallback: legacy API (openai<1.x)
-        try:
-            resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
-                model=chosen_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=max_tokens,
-                temperature=chosen_temp,
-                n=1,
-            )
-            raw = (resp["choices"][0]["message"]["content"] or "").strip()
-            return raw[:requested] if raw else None
-        except Exception:
-            return None
+        return content[:requested] if content else None
