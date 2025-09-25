@@ -1,8 +1,8 @@
 from typing import Optional
 from dataclasses import dataclass, field
 
-from Research.CodeGenerator.Utilities.RemoteTextGenerator import RemoteTextGenerator
 from Research.CodeGenerator.Utilities.LocalTextGenerator import LocalTextGenerator
+from Research.CodeGenerator.Utilities.RemoteTextGenerator import RemoteTextGenerator
 
 @dataclass(slots = True)
 class TextGenerator:
